@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant Bridge - Desktop Connection</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Assistant Bridge</h1>
+            <p>Connect your desktop assistant to the web interface</p>
+        </div>
+        
+        <div class="connection-status" id="connectionStatus">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Waiting for desktop app...</span>
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn" class="btn primary" disabled>Connect</button>
+            <button id="disconnectBtn" class="btn secondary" disabled>Disconnect</button>
+        </div>
+        
+        <div class="message-area">
+            <h3>Messages</h3>
+            <div id="messages" class="messages"></div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+                <button id="sendBtn" disabled>Send</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Setup Instructions</h3>
+            <ol>
+                <li>Download and extract the desktop application</li>
+                <li>Run <code>npm install</code> to install dependencies</li>
+                <li>Start the desktop app with <code>npm start</code></li>
+                <li>Click "Connect" to establish the bridge</li>
+            </ol>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "socket.io-client": "https://cdn.socket.io/4.7.5/socket.io.esm.min.js"
+        }
+    }
+    </script>
+    
+    <script type="module" src="app.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
