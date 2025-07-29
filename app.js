@@ -22,10 +22,258 @@ class BridgeConnection {
         });
     }
 
-    setupDownloadButton() {
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            window.location.href = 'assistant-bridge-desktop.zip';
+    async setupDownloadButton() {
+        const downloadBtn = document.getElementById('downloadBtn');
+        downloadBtn.addEventListener('click', async () => {
+            downloadBtn.innerHTML = '<span>⏳</span> Generating...';
+            downloadBtn.disabled = true;
+            
+            try {
+                await this.createAndDownloadZip();
+            } catch (error) {
+                console.error('Download failed:', error);
+                downloadBtn.innerHTML = '<span>❌</span> Failed - Try Again';
+                downloadBtn.disabled = false;
+            }
         });
+    }
+
+    async createAndDownloadZip() {
+        const JSZip = await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+        const zip = new JSZip.default();
+        
+        // Add package.json
+        zip.file('package.json', JSON.stringify({
+            "name": "assistant-bridge-desktop",
+            "version": "1.0.0",
+            "description": "Desktop assistant with web bridge connection",
+            "main": "main.js",
+            "scripts": {
+                "start": "electron .",
+                "dev": "electron . --dev",
+                "build": "electron-builder",
+                "pack": "electron-builder --dir",
+                "dist": "electron-builder --publish=never"
+            },
+            "keywords": ["assistant", "bridge", "desktop", "electron"],
+            "author": "Assistant Bridge Team",
+            "license": "MIT",
+            "devDependencies": {
+                "electron": "^28.0.0",
+                "electron-builder": "^24.9.1"
+            },
+            "dependencies": {
+                "socket.io": "^4.7.5",
+                "express": "^4.18.2",
+                "archiver": "^6.0.1"
+            },
+            "build": {
+                "appId": "com.assistantbridge.desktop",
+                "productName": "Assistant Bridge",
+                "directories": { "output": "dist" },
+                "files": ["main.js", "src/**/*", "node_modules/**/*"],
+                "mac": { "category": "public.app-category.productivity" },
+                "win": { "target": "nsis" },
+                "linux": { "target": "AppImage" }
+            }
+        }, null, 2));
+
+        // Add main.js
+        const mainJs = `const { app, BrowserWindow } = require('electron');
+const path = require('path');
+const BridgeServer = require('./src/bridge-server.js');
+
+class DesktopApp {
+    constructor() {
+        this.mainWindow = null;
+        this.bridgeServer = new BridgeServer();
+    }
+
+    async createWindow() {
+        this.mainWindow = new BrowserWindow({
+            width: 1200,
+            height: 800,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                preload: path.join(__dirname, 'preload.js')
+            },
+            titleBarStyle: 'hiddenInset',
+            show: false
+        });
+
+        this.mainWindow.loadFile('index.html');
+        
+        this.mainWindow.once('ready-to-show', () => {
+            this.mainWindow.show();
+        });
+
+        this.mainWindow.on('closed', () => {
+            this.mainWindow = null;
+            this.bridgeServer.stop();
+        });
+    }
+
+    async initialize() {
+        await app.whenReady();
+        this.bridgeServer.start();
+        this.createWindow();
+
+        app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') {
+                app.quit();
+            }
+        });
+
+        app.on('activate', async () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                this.createWindow();
+            }
+        });
+    }
+}
+
+const desktopApp = new DesktopApp();
+desktopApp.initialize();`;
+
+        zip.file('main.js', mainJs);
+
+        // Add preload.js
+        const preloadJs = `const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    sendMessage: (channel, data) => {
+        ipcRenderer.send(channel, data);
+    },
+    onMessage: (channel, callback) => {
+        ipcRenderer.on(channel, callback);
+    }
+});`;
+
+        zip.file('preload.js', preloadJs);
+
+        // Add index.html
+        const indexHtml = await fetch('index.html').then(r => r.text());
+        zip.file('index.html', indexHtml);
+
+        // Add styles.css
+        const stylesCss = await fetch('styles.css').then(r => r.text());
+        zip.file('styles.css', stylesCss);
+
+        // Add app.js
+        const appJs = await fetch('app.js').then(r => r.text());
+        zip.file('app.js', appJs);
+
+        // Create src directory and add bridge-server.js
+        const src = zip.folder('src');
+        const bridgeServer = `const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const path = require('path');
+
+class BridgeServer {
+    constructor() {
+        this.server = null;
+        this.io = null;
+        this.port = 3001;
+    }
+
+    start() {
+        const expressApp = express();
+        expressApp.use(express.static(path.join(__dirname, '..')));
+        
+        this.server = http.createServer(expressApp);
+        this.io = socketIo(this.server, {
+            cors: {
+                origin: "*",
+                methods: ["GET", "POST"]
+            }
+        });
+
+        this.io.on('connection', (socket) => {
+            console.log('Web interface connected');
+            
+            socket.on('message', (data) => {
+                console.log('Received from web:', data.message);
+                
+                setTimeout(() => {
+                    socket.emit('message', {
+                        message: \`Echo: \${data.message}\`,
+                        timestamp: new Date().toISOString()
+                    });
+                }, 500);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Web interface disconnected');
+            });
+        });
+
+        this.server.listen(this.port, () => {
+            console.log(\`Bridge server running on port \${this.port}\`);
+        });
+    }
+
+    stop() {
+        if (this.server) {
+            this.server.close();
+            this.server = null;
+            this.io = null;
+        }
+    }
+}
+
+module.exports = BridgeServer;`;
+
+        src.file('bridge-server.js', bridgeServer);
+
+        // Create README.md
+        const readme = `# Assistant Bridge - Desktop to Web Communication
+
+## Overview
+This is a desktop application that creates a bridge between a Node.js desktop app and a web interface using Socket.IO for real-time communication.
+
+## Installation & Setup
+
+1. **Extract the ZIP file** to your desired location
+2. **Install dependencies:**
+   \\`\\`\\`bash
+   npm install
+   \\`\\`\\`
+3. **Start the application:**
+   \\`\\`\\`bash
+   npm start
+   \\`\\`\\`
+
+## Usage
+1. Start the desktop application
+2. Open your web browser to the desktop app
+3. Click "Connect" to establish the bridge
+4. Start chatting between web and desktop interfaces!
+
+## Development
+- Built with Electron
+- Uses Socket.IO for real-time communication
+- Responsive web interface with modern CSS`;
+        
+        zip.file('README.md', readme);
+
+        // Generate and download the zip
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'assistant-bridge-desktop.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Reset button
+        const downloadBtn = document.getElementById('downloadBtn');
+        downloadBtn.innerHTML = '<span>📦</span> Download ZIP';
+        downloadBtn.disabled = false;
     }
 
     checkConnection() {
