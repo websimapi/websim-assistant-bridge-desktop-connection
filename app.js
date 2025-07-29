@@ -76,7 +76,6 @@ class DesktopApp {
             show: false
         });
 
-        // Load the web interface
         this.mainWindow.loadFile('index.html');
         
         this.mainWindow.once('ready-to-show', () => {
@@ -106,10 +105,9 @@ class DesktopApp {
             socket.on('message', (data) => {
                 console.log('Received from web:', data.message);
                 
-                // Simulate processing and respond
                 setTimeout(() => {
                     socket.emit('message', {
-                        message: \`Echo: \${data.message}\`,
+                        message: 'Echo: ' + data.message,
                         timestamp: new Date().toISOString()
                     });
                 }, 500);
@@ -121,7 +119,7 @@ class DesktopApp {
         });
 
         this.server.listen(this.port, () => {
-            console.log(\`Bridge server running on port \${this.port}\`);
+            console.log('Bridge server running on port ' + this.port);
         });
     }
 
@@ -144,7 +142,6 @@ class DesktopApp {
     }
 }
 
-// Start the desktop application
 const desktopApp = new DesktopApp();
 desktopApp.initialize();
 
