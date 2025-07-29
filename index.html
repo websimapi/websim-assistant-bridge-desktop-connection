@@ -11,9 +11,15 @@
         <div class="header">
             <h1>Assistant Bridge</h1>
             <p>Connect your desktop assistant to the web interface</p>
-            <button id="downloadBtn" class="btn download-btn">
-                <span>📥 Download Desktop App</span>
+        </div>
+        
+        <div class="download-section">
+            <h3>Download Desktop App</h3>
+            <button id="downloadBtn" class="btn download">
+                <span>📦</span>
+                Download ZIP
             </button>
+            <p class="download-info">Complete desktop application with all dependencies</p>
         </div>
         
         <div class="connection-status" id="connectionStatus">
@@ -38,7 +44,9 @@
         <div class="instructions">
             <h3>Setup Instructions</h3>
             <ol>
-                <li>Download and extract the desktop application</li>
+                <li>Download the ZIP file using the button above</li>
+                <li>Extract the ZIP to your desired location</li>
+                <li>Open terminal/command prompt in the extracted folder</li>
                 <li>Run <code>npm install</code> to install dependencies</li>
                 <li>Start the desktop app with <code>npm start</code></li>
                 <li>Click "Connect" to establish the bridge</li>
@@ -53,8 +61,6 @@
         }
     }
     </script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <script type="module" src="app.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>

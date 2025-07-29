@@ -8,7 +8,8 @@
     "dev": "electron . --dev",
     "build": "electron-builder",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --publish=never"
+    "dist": "electron-builder --publish=never",
+    "create-zip": "node scripts/create-zip.js"
   },
   "keywords": ["assistant", "bridge", "desktop", "electron"],
   "author": "Assistant Bridge Team",
@@ -19,7 +20,8 @@
   },
   "dependencies": {
     "socket.io": "^4.7.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "archiver": "^6.0.1"
   },
   "build": {
     "appId": "com.assistantbridge.desktop",
@@ -29,7 +31,7 @@
     },
     "files": [
       "main.js",
-      "server.js",
+      "src/**/*",
       "node_modules/**/*"
     ],
     "mac": {
@@ -43,4 +45,3 @@
     }
   }
 }
-

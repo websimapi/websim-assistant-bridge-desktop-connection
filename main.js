@@ -1,15 +1,11 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
+const BridgeServer = require('./src/bridge-server.js');
 
 class DesktopApp {
     constructor() {
         this.mainWindow = null;
-        this.server = null;
-        this.io = null;
-        this.port = 3001;
+        this.bridgeServer = new BridgeServer();
     }
 
     async createWindow() {
@@ -25,7 +21,6 @@ class DesktopApp {
             show: false
         });
 
-        // Load the web interface
         this.mainWindow.loadFile('index.html');
         
         this.mainWindow.once('ready-to-show', () => {
@@ -34,49 +29,13 @@ class DesktopApp {
 
         this.mainWindow.on('closed', () => {
             this.mainWindow = null;
-        });
-    }
-
-    setupServer() {
-        const expressApp = express();
-        expressApp.use(express.static(__dirname));
-        
-        this.server = http.createServer(expressApp);
-        this.io = socketIo(this.server, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
-            }
-        });
-
-        this.io.on('connection', (socket) => {
-            console.log('Web interface connected');
-            
-            socket.on('message', (data) => {
-                console.log('Received from web:', data.message);
-                
-                // Simulate processing and respond
-                setTimeout(() => {
-                    socket.emit('message', {
-                        message: `Echo: ${data.message}`,
-                        timestamp: new Date().toISOString()
-                    });
-                }, 500);
-            });
-
-            socket.on('disconnect', () => {
-                console.log('Web interface disconnected');
-            });
-        });
-
-        this.server.listen(this.port, () => {
-            console.log(`Bridge server running on port ${this.port}`);
+            this.bridgeServer.stop();
         });
     }
 
     async initialize() {
         await app.whenReady();
-        this.setupServer();
+        this.bridgeServer.start();
         this.createWindow();
 
         app.on('window-all-closed', () => {
@@ -93,7 +52,6 @@ class DesktopApp {
     }
 }
 
-// Start the desktop application
 const desktopApp = new DesktopApp();
 desktopApp.initialize();
 
